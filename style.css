@@ -1,0 +1,171 @@
+:root{
+  --bg:#0f1724;
+  --card:#ffffff;
+  --muted:#555;             /* เทาเข้มขึ้น */
+  --accent1:#6ee7b7;
+  --accent2:#60a5fa;
+  --glass: rgba(255,255,255,0.85); /* โปร่งใสแบบอ่านง่าย */
+  --radius:16px;
+}
+
+html, body {
+  font-family: 'Kanit', sans-serif !important;
+}
+
+.header {
+
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  padding: 1rem;
+  background: #f9f9f9; /* โทนพื้นสุภาพ */
+  border-bottom: 2px solid #e5e5e5;
+}
+
+.brand-badge img {
+  height: 120px;
+  border-radius: 10px; /* เลือกได้ว่าจะโค้งหรือไม่ */
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.header-text {
+  max-width: 800px;
+  text-align: center;
+}
+
+.header-text .title {
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: #333;
+  margin-bottom: 0.5rem;
+}
+
+.header-text h3 {
+  font-size: 1.2rem;
+  font-weight: 400;
+  color: #555;
+  margin-bottom: 1rem;
+  line-height: 1.6;
+}
+
+.header-text .lead {
+  font-size: 1rem;
+  color: #666;
+}
+
+
+body {
+  background-image: url('https://kpi.ac.th/wp-content/uploads/2025/09/ดีไซน์ที่ยังไม่ได้ตั้งชื่อ-12.webp');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+  font-family: 'Poppins', sans-serif;
+  color: #222;  /* สีตัวอักษรหลัก */
+}
+
+.page {
+  min-height:100vh;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:48px 20px;
+}
+
+.card-modern {
+  background: var(--glass); 
+  padding: 24px;
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.25);
+  max-width: 700px;
+  width: 100%;
+}
+
+h1.title {
+  font-size:28px;
+  margin:0;
+  font-weight:600;
+  color:#111;
+}
+
+p.lead { margin:0; color:var(--muted); font-size:14px; }
+
+.form-label { 
+  font-size:15px; 
+  color:#333; 
+  margin-bottom:6px; 
+  font-weight:500; 
+}
+
+form .form-control {
+  background: rgba(255,255,255,0.9);
+  border:1px solid #ddd;
+  color:#222;
+  border-radius:10px;
+  padding:14px;
+  height:48px;
+}
+
+.btn-submit {
+  background: linear-gradient(90deg,var(--accent2),var(--accent1));
+  border:none;
+  color:#fff; /* เปลี่ยนเป็นขาวให้ตัดกับปุ่ม */
+  font-weight:700;
+  padding:12px 18px;
+  border-radius:12px;
+  box-shadow: 0 8px 22px rgba(14,165,233,0.12);
+  transition: transform .12s ease, box-shadow .12s ease;
+}
+.btn-submit:hover{
+  transform: translateY(-2px); 
+  box-shadow: 0 14px 36px rgba(14,165,233,0.2);
+}
+
+.muted-small{ color:var(--muted); font-size:14px; }
+
+.right-panel {
+  background: rgba(255,255,255,0.7);
+  border-radius:12px;
+  padding:18px;
+  border:1px solid rgba(0,0,0,0.08);
+  display:flex;
+  flex-direction:column;
+  gap:12px;
+  align-items:stretch;
+}
+
+.qr-box{
+  background: rgba(255,255,255,0.9);
+  border-radius:10px;
+  padding:14px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  min-height:180px;
+  border:1px dashed rgba(0,0,0,0.1);
+}
+
+.qr-box img { width:200px; height:200px; border-radius:8px; }
+
+.info-row{ display:flex; justify-content:space-between; gap:10px; align-items:center;}
+.small-key{ color:var(--muted); font-size:14px; }
+.small-val{ font-weight:600; color:#111; }
+
+.note {
+  font-size:14px; 
+  color:#444; 
+  background: rgba(255,255,255,0.8); 
+  padding:10px; 
+  border-radius:8px;
+}
+
+.pdpa-box label {
+  color: #222; 
+  font-weight: 500;
+  line-height: 1.5;
+}
+.pdpa-box a {
+  color: #e91e63;
+  font-weight: 600;
+  text-decoration: underline;
+}

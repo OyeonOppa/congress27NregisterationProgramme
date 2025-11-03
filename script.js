@@ -65,7 +65,6 @@ function validateForm() {
   return true;
 }
 
-// Submit
 form.addEventListener("submit", async (e) => {
   e.preventDefault();
 
@@ -81,17 +80,13 @@ form.addEventListener("submit", async (e) => {
 
   const fd = new FormData(form);
 
-  // ดึง checkbox ทั้งหมดที่เลือก
   const checkedRooms = Array.from(
     document.querySelectorAll("input[name='seminarRooms[]']:checked")
   ).map(input => input.value);
 
-  // ลบค่าเดิมออก
   fd.delete("seminarRooms[]");
 
-  // ใส่ทุกค่าที่เลือกกลับเข้า FormData
   checkedRooms.forEach(room => fd.append("seminarRooms[]", room));
-  // -----------------
 
   try {
     const res = await fetch(scriptURL, { method: "POST", body: fd });
@@ -106,8 +101,7 @@ form.addEventListener("submit", async (e) => {
         data = JSON.parse(text);
       } catch {
         data = {
-          success:
-            text === "Success" || text.toLowerCase().includes("success"),
+          success: text === "Success" || text.toLowerCase().includes("success"),
           raw: text,
         };
       }
@@ -115,7 +109,12 @@ form.addEventListener("submit", async (e) => {
 
     console.log("Response:", data);
 
-    if (data.success) {
+    // ✅ เพิ่มการตรวจสอบ isFull
+    if (data.isFull) {
+      responseMessage.innerHTML = `<div class="alert alert-danger p-2">🚫 ${data.message}</div>`;
+      statusText.textContent = "ปิดการลงทะเบียน";
+      qrArea.innerHTML = `<div class="muted-small">ไม่สามารถลงทะเบียน</div>`;
+    } else if (data.success) {
       responseMessage.innerHTML = `<div class="alert alert-success p-2">✅ ลงทะเบียนเรียบร้อย ขอบคุณที่เข้าร่วมงาน</div>`;
       statusText.textContent = "Registered";
       uidText.textContent = data.uid || "-";
@@ -140,7 +139,7 @@ form.addEventListener("submit", async (e) => {
       document.getElementById("seminarRooms").classList.add("d-none");
       document.getElementById("customPrefixBox").classList.add("d-none");
     } else {
-      responseMessage.innerHTML = `<div class="alert alert-danger p-2">❌ ระบบไม่สามารถลงทะเบียนได้ กรุณาลองใหม่อีกครั้ง หรือติดต่อผู้จัดงาน</div>`;
+      responseMessage.innerHTML = `<div class="alert alert-danger p-2">❌ ${data.message || "ระบบไม่สามารถลงทะเบียนได้ กรุณาลองใหม่อีกครั้ง"}</div>`;
       statusText.textContent = "เกิดข้อผิดพลาด";
       qrArea.innerHTML = `<div class="muted-small">ไม่สามารถสร้าง QR</div>`;
     }

@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>🎯 Check-in ห้องย่อย 1</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <script src="https://unpkg.com/html5-qrcode"></script>
+  <style>
+    body {
+      background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      min-height: 100vh;
+      padding: 1rem;
+    }
+    .container {
+      max-width: 600px;
+      margin: 2rem auto;
+      padding: 2rem;
+      background: #fff;
+      border-radius: 20px;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+    }
+    .header-badge {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 1rem;
+      border-radius: 15px;
+      text-align: center;
+      margin-bottom: 1.5rem;
+    }
+    h2 {
+      margin: 0;
+      font-weight: 600;
+      font-size: 1.5rem;
+    }
+    .room-label {
+      font-size: 0.9rem;
+      opacity: 0.9;
+      margin-top: 0.25rem;
+    }
+    #reader {
+      width: 100%;
+      border-radius: 15px;
+      overflow: hidden;
+      margin-bottom: 1.5rem;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    }
+    #statusMessage {
+      font-size: 1.1rem;
+      font-weight: 500;
+      text-align: center;
+      padding: 1.5rem;
+      border-radius: 12px;
+      transition: all 0.3s ease;
+      min-height: 100px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+    }
+    .status-icon {
+      font-size: 2.5rem;
+      margin-bottom: 0.5rem;
+    }
+    .detail-text {
+      font-size: 0.95rem;
+      margin-top: 0.5rem;
+      opacity: 0.9;
+    }
+    .error-details {
+      font-size: 0.85rem;
+      margin-top: 0.75rem;
+      padding: 0.75rem;
+      background: rgba(255,255,255,0.2);
+      border-radius: 8px;
+      max-width: 100%;
+      word-break: break-word;
+    }
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.05); }
+    }
+    .pulse {
+      animation: pulse 0.5s ease-in-out;
+    }
+    .config-warning {
+      background: #fff3cd;
+      border: 2px solid #ffc107;
+      border-radius: 10px;
+      padding: 1rem;
+      margin-bottom: 1rem;
+      font-size: 0.9rem;
+    }
+    .config-warning strong {
+      color: #856404;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- ⚠️ คำเตือนถ้ายังไม่ได้ตั้งค่า URL -->
+    <div id="configWarning" class="config-warning" style="display:none;">
+      <strong>⚠️ กรุณาตั้งค่า Backend URL ก่อนใช้งาน</strong><br>
+      1. Deploy Apps Script<br>
+      2. คัดลอก URL<br>
+      3. แทนที่ใน JavaScript ด้านล่าง
+    </div>
+
+    <div class="header-badge">
+      <h2>📷 QR Code Check-in</h2>
+      <div class="room-label">🎯 ห้องย่อย 1 เท่านั้น</div>
+    </div>
+    
+    <div id="reader"></div>
+    
+    <div id="statusMessage" class="bg-light">
+      <div class="status-icon">📱</div>
+      <div>กรุณาสแกน QR Code</div>
+      <div class="detail-text">สำหรับเช็คอินห้องย่อย 1</div>
+    </div>
+  </div>
+
+  <script>
+    // ========================================
+    // 🔧 ตั้งค่าตรงนี้
+    // ========================================
+    
+    // ⚠️ แทนที่ URL นี้ด้วย Deployment URL จริงของคุณ
+    const backendUrl = "https://script.google.com/macros/s/AKfycbx-x9vY-4UqXOM4MziTCRWc1D20pbTg8wPuuGoDnfkmafAd1u98D779SEsd9Hv6d9Si/exec";
+    
+    // ตรวจสอบว่าได้ตั้งค่า URL แล้วหรือยัง
+    const isConfigured = !backendUrl.includes("YOUR_NEW_DEPLOYMENT_URL_HERE");
+    
+    if (!isConfigured) {
+      document.getElementById('configWarning').style.display = 'block';
+      console.error("❌ กรุณาตั้งค่า backendUrl ก่อนใช้งาน");
+    }
+    
+    // ========================================
+    
+    const statusMessage = document.getElementById("statusMessage");
+    let isProcessing = false;
+    let scanCount = 0;
+
+    /**
+     * ส่ง UID ไปยัง Backend
+     */
+    function sendUIDToBackend(uid) {
+      if (isProcessing) {
+        console.log("⏳ กำลังประมวลผลอยู่...");
+        return;
+      }
+      
+      if (!isConfigured) {
+        statusMessage.innerHTML = `
+          <div class="status-icon">⚠️</div>
+          <div>ยังไม่ได้ตั้งค่าระบบ</div>
+          <div class="detail-text">กรุณาตั้งค่า Backend URL</div>
+        `;
+        statusMessage.className = "bg-warning text-dark";
+        return;
+      }
+      
+      isProcessing = true;
+      scanCount++;
+
+      console.log(`📱 Scan #${scanCount}: ${uid}`);
+      console.log(`🔗 Calling: ${backendUrl}?uid=${uid}`);
+
+      statusMessage.innerHTML = `
+        <div class="status-icon">⏳</div>
+        <div>กำลังตรวจสอบในห้องย่อย 1...</div>
+        <div class="detail-text">Scan #${scanCount}</div>
+      `;
+      statusMessage.className = "bg-warning text-dark";
+
+      const startTime = Date.now();
+      
+      fetch(backendUrl + "?uid=" + encodeURIComponent(uid), {
+        method: 'GET',
+        redirect: 'follow'
+      })
+        .then((res) => {
+          const duration = Date.now() - startTime;
+          console.log(`⏱️ Response time: ${duration}ms`);
+          console.log(`📊 Response status: ${res.status}`);
+          
+          if (!res.ok) {
+            throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+          }
+          
+          return res.json();
+        })
+        .then((data) => {
+          console.log("📦 Response data:", data);
+          
+          statusMessage.classList.add('pulse');
+          
+          if (data.success) {
+            const fullname = data.fullname || "ผู้เข้าร่วม";
+            const timestamp = new Date(data.timestamp).toLocaleString('th-TH', {
+              year: 'numeric',
+              month: 'short',
+              day: 'numeric',
+              hour: '2-digit',
+              minute: '2-digit',
+              second: '2-digit'
+            });
+            
+            statusMessage.innerHTML = `
+              <div class="status-icon">✅</div>
+              <div>
+                <strong>${fullname}</strong><br>
+                <span style="color: #28a745; font-size: 1.1rem;">✓ เช็คอินสำเร็จ</span>
+              </div>
+              <div class="detail-text">
+                ${data.sheetName || 'ห้องย่อย 1'}<br>
+                ${timestamp}
+              </div>
+            `;
+            statusMessage.className = "bg-success text-white";
+            
+            // เสียงแจ้งเตือนเมื่อสำเร็จ (optional)
+            try {
+              const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBSuBzvLZiTYIG2m98OScTgwOUpzj77ZiGwU7k9n0yXksBSh+zO/glkALFGGz6+yoVBUIR6Hf8r5tIQUsgs/y2Ik2CBlpu+3mnEwMDlGc4++2YhsFO5HY9Ml5LAUofszt4ZhBCxRgs+zrqFQVCEef4O6+bCEGLIPP8tiJNwgaabzt5ZxNDA5SnOPvtmIbBTuS2PTJeSwFKH7M7+GYQQ0UYLPs66hUFghGoN7vvmwiBi2Bz/LYiTcIG2m88OWaTgwPU53k77ZiGwU6ktnzyXksBSh+y+/imEELFF+y7OyoVBUJR6Hf771sIgYtgc7y2Ik3CBtpvPDlmk4MD1Kd5O+2YhsFOpLZ9Ml5KwYofs3v4ZhBDBRes+zrqFQVCEah3++9bCMGLYHO8tiJNwgaabzw5ZpODA9SnePvtmIbBTqS2PTJeSwGKIDL7+KYQQ0UX7Ps66hUFQlGoN7vvWwiBi2Bzw...');
+              audio.play().catch(e => console.log("🔇 Audio play failed:", e));
+            } catch(e) {
+              console.log("🔇 Audio not supported");
+            }
+            
+          } else {
+            // ❌ ไม่สำเร็จ
+            const errorMsg = data.error || 'ไม่พบข้อมูลในห้องย่อย 1';
+            const hint = data.hint || '';
+            
+            statusMessage.innerHTML = `
+              <div class="status-icon">❌</div>
+              <div>${errorMsg}</div>
+              ${hint ? `<div class="detail-text">${hint}</div>` : ''}
+              ${data.debug ? `<div class="error-details">Debug: ${JSON.stringify(data.debug)}</div>` : ''}
+            `;
+            statusMessage.className = "bg-danger text-white";
+            
+            console.warn("❌ Check-in failed:", data);
+          }
+
+          // รีเซ็ตหลัง 5 วินาที
+          setTimeout(() => {
+            statusMessage.classList.remove('pulse');
+            isProcessing = false;
+          }, 5000);
+        })
+        .catch((err) => {
+          console.error("⚠️ Fetch error:", err);
+          
+          statusMessage.innerHTML = `
+            <div class="status-icon">⚠️</div>
+            <div>ไม่สามารถเชื่อมต่อได้</div>
+            <div class="detail-text">Failed to fetch</div>
+            <div class="error-details">
+              <strong>สาเหตุที่เป็นไปได้:</strong><br>
+              • ยังไม่ได้ Deploy Apps Script<br>
+              • URL ไม่ถูกต้อง<br>
+              • ไม่มีสัญญาณอินเทอร์เน็ต<br>
+              • CORS policy blocked<br><br>
+              <small>Error: ${err.message}</small>
+            </div>
+          `;
+          statusMessage.className = "bg-danger text-white";
+          
+          // รีเซ็ตหลัง 8 วินาที
+          setTimeout(() => {
+            isProcessing = false;
+            statusMessage.innerHTML = `
+              <div class="status-icon">📱</div>
+              <div>กรุณาสแกน QR Code</div>
+              <div class="detail-text">สำหรับเช็คอินห้องย่อย 1</div>
+            `;
+            statusMessage.className = "bg-light";
+          }, 8000);
+        });
+    }
+
+    /**
+     * เริ่มต้น QR Scanner
+     */
+    function startScanner() {
+      console.log("📷 Starting QR Scanner...");
+      
+      const html5QrCode = new Html5Qrcode("reader");
+      const config = { 
+        fps: 10, 
+        qrbox: { width: 250, height: 250 },
+        aspectRatio: 1.0,
+        formatsToSupport: [Html5QrcodeScanType.SCAN_TYPE_CAMERA]
+      };
+
+      html5QrCode
+        .start(
+          { facingMode: "environment" }, // ใช้กล้องหลัง
+          config, 
+          (decodedText) => {
+            console.log("✅ QR Decoded:", decodedText);
+            
+            if (!isProcessing) {
+              html5QrCode.pause(true);
+              sendUIDToBackend(decodedText);
+              
+              // รอ 3 วินาทีแล้วเริ่มสแกนใหม่
+              setTimeout(() => {
+                html5QrCode.resume();
+                console.log("🔄 Scanner resumed");
+              }, 3000);
+            }
+          },
+          (errorMessage) => {
+            // ข้อความ error ปกติของ scanner (ไม่ต้องแสดง)
+            // console.log("Scanning...", errorMessage);
+          }
+        )
+        .then(() => {
+          console.log("✅ QR Scanner started successfully");
+        })
+        .catch((err) => {
+          console.error("❌ QR Scanner error:", err);
+          
+          statusMessage.innerHTML = `
+            <div class="status-icon">⚠️</div>
+            <div>ไม่สามารถเข้าถึงกล้องได้</div>
+            <div class="detail-text">
+              • กรุณาอนุญาตสิทธิ์กล้อง<br>
+              • ใช้ HTTPS เท่านั้น<br>
+              • ลองรีเฟรชหน้าเว็บ
+            </div>
+            <div class="error-details">${err.message}</div>
+          `;
+          statusMessage.className = "bg-danger text-white";
+        });
+    }
+
+    // เริ่มสแกนเมื่อโหลดหน้าเว็บเสร็จ
+    window.addEventListener('load', () => {
+      console.log("🚀 Page loaded, initializing scanner...");
+      startScanner();
+    });
+  </script>
+</body>
+</html>

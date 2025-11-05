@@ -82,9 +82,8 @@
     const backendUrl = "https://script.google.com/macros/s/AKfycbwA-eTV_9r8O9zf-kQ3pAoPcqK-Qdh3Z65xht1FQvjJa4HZtF7McvJSjyV2fh71nnJb/exec";
     const statusMessage = document.getElementById("statusMessage");
     
-    let isProcessing = false; // ป้องกันการสแกนซ้ำ
+    let isProcessing = false;
 
-    // ฟังก์ชันส่ง UID ไปตรวจสอบที่ Backend
     function sendUIDToBackend(uid) {
       if (isProcessing) return;
       isProcessing = true;
@@ -98,14 +97,13 @@
       fetch(backendUrl + "?uid=" + encodeURIComponent(uid))
         .then((res) => res.json())
         .then((data) => {
+          console.log("Response:", data); // 🐛 Debug ใน Console
+          
           statusMessage.classList.add('pulse');
           
           if (data.success) {
-            const fullname = data.fullname || data.firstname || "ผู้ใช้งาน";
-            const timestamp = new Date(data.timestamp).toLocaleString('th-TH', {
-              dateStyle: 'short',
-              timeStyle: 'short'
-            });
+            const fullname = data.fullname || "ผู้เข้าร่วม";
+            const timestamp = new Date(data.timestamp).toLocaleString('th-TH');
             
             statusMessage.innerHTML = `
               <div class="status-icon">✅</div>
@@ -118,21 +116,26 @@
             `;
             statusMessage.className = "bg-success text-white";
           } else {
+            // แสดง debug info ถ้ามี
+            let debugText = data.error || 'เกิดข้อผิดพลาด';
+            if (data.debug) {
+              debugText += '<br><small>Debug: ' + JSON.stringify(data.debug) + '</small>';
+            }
+            
             statusMessage.innerHTML = `
               <div class="status-icon">❌</div>
-              <div>${data.error || 'เกิดข้อผิดพลาด'}</div>
-              ${data.sheet ? `<div class="sheet-badge">📋 ${data.sheet}</div>` : ''}
+              <div>${debugText}</div>
             `;
             statusMessage.className = "bg-danger text-white";
           }
 
-          // รีเซ็ตหลัง 3 วินาที
           setTimeout(() => {
             statusMessage.classList.remove('pulse');
             isProcessing = false;
-          }, 3000);
+          }, 5000);
         })
         .catch((err) => {
+          console.error("Fetch error:", err); // 🐛 Debug
           statusMessage.innerHTML = `
             <div class="status-icon">⚠️</div>
             <div>เกิดข้อผิดพลาด: ${err.message}</div>
